@@ -11,6 +11,8 @@ define(function (require, exports, module) {
     var ExtensionUtils     = brackets.getModule("utils/ExtensionUtils");
     var Menus              = brackets.getModule("command/Menus");
     var PreferencesManager = brackets.getModule("preferences/PreferencesManager");
+    var FileUtils          = brackets.getModule("file/FileUtils");
+    var FileSystem         = brackets.getModule("filesystem/FileSystem");
 
     // Support for Brackets Sprint 38+ : https://github.com/adobe/brackets/wiki/Brackets-CodeMirror-v4-Migration-Guide
     var CodeMirror = brackets.getModule("thirdparty/CodeMirror2/lib/codemirror");
@@ -20,7 +22,12 @@ define(function (require, exports, module) {
 
     var commandId          = "scientech-com-ua.brackets-trailingspaces.toggle";
     var preferencesId      = "scientech-com-ua.brackets-trailingspaces";
-    var defaultPreferences = { checked: true };
+    var defaultPreferences = {
+        checked: true,
+        styleTemplate: {
+            color: "249, 32, 155, 0.75"
+        }
+    };
 
 
     // --- State Variables ---
@@ -73,12 +80,23 @@ define(function (require, exports, module) {
     function loadPreferences() {
         _preferences = PreferencesManager.getExtensionPrefs(preferencesId);
         _preferences.definePreference("checked", "boolean", defaultPreferences.checked);
+        _preferences.definePreference("styleTemplate", "object", defaultPreferences.styleTemplate);
     }
 
+    function mapReplace(content, map) {
+        for (var key in map) {
+            var re = new RegExp("\\%\\(" + key + "\\)s", "g");
+            content = content.replace(re, map[key]);
+        };
+        return content;
+    }
 
     function loadStyle() {
-        ExtensionUtils.loadStyleSheet(module, "style.css").done(function (node) {
-            _styleTag = node;
+        var selfDir = FileUtils.getParentPath(module.uri);
+        var file = FileSystem.getFileForPath(selfDir + "/style.css");
+        file.read(function (err, content) {
+            content = mapReplace(content, _preferences.get("styleTemplate"));
+            ExtensionUtils.addEmbeddedStyleSheet(content);
         });
     }
 
