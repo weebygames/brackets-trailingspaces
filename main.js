@@ -85,9 +85,11 @@ define(function (require, exports, module) {
 
     function mapReplace(content, map) {
         for (var key in map) {
-            var re = new RegExp("\\%\\(" + key + "\\)s", "g");
-            content = content.replace(re, map[key]);
-        };
+            if (map.hasOwnProperty(key)) {
+                var re = new RegExp("\\%\\(" + key + "\\)s", "g");
+                content = content.replace(re, map[key]);
+            }
+        }
         return content;
     }
 
